@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Загрузка картинки</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="/styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>Этап 1: Загрузка картинки</h2>
+      <form id="uploadForm">
+        <input
+          type="file"
+          id="images"
+          name="images"
+          accept="image/*"
+          multiple
+          required
+        />
+        <button type="submit">Загрузить</button>
+      </form>
+      <pre id="result"></pre>
+      <p><a href="/">На главную</a></p>
+    </div>
+    <script>
+      const form = document.getElementById("uploadForm");
+      const result = document.getElementById("result");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        result.textContent = "Загрузка...";
+        const fd = new FormData();
+        const files = document.getElementById("images").files;
+        for (const f of files) fd.append("images", f);
+        try {
+          const res = await fetch("/api/images/upload", {
+            method: "POST",
+            body: fd,
+          });
+          const json = await res.json();
+          result.textContent = JSON.stringify(json, null, 2);
+        } catch (e) {
+          result.textContent = "Ошибка: " + e.message;
+        }
+      });
+    </script>
+  </body>
+</html>

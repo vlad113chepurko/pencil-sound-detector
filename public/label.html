@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Разметка: Это карандаш?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="/styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>Этап 2: Разметка</h2>
+      <div id="viewer" class="viewer">
+        <img id="img" alt="image to label" />
+      </div>
+      <div class="buttons">
+        <button id="yesBtn">Да, карандаш</button>
+        <button id="noBtn" class="secondary">Нет</button>
+      </div>
+      <pre id="status"></pre>
+      <p><a href="/">На главную</a></p>
+    </div>
+    <script>
+      let current = null;
+      const img = document.getElementById("img");
+      const statusEl = document.getElementById("status");
+
+      async function loadNext() {
+        statusEl.textContent = "Загрузка следующего изображения...";
+        img.src = "";
+        current = null;
+        const res = await fetch("/api/images/next-unlabeled");
+        if (res.status === 404) {
+          statusEl.textContent = "Неразмеченных изображений нет.";
+          return;
+        }
+        const json = await res.json();
+        current = json.id;
+        img.src = json.url;
+        statusEl.textContent = "Ответьте: это карандаш?";
+      }
+
+      async function label(isPencil) {
+        if (!current) return;
+        statusEl.textContent = "Сохраняю метку...";
+        const res = await fetch("/api/images/" + current + "/label", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPencil }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          statusEl.textContent = "Ошибка: " + (json.error || res.statusText);
+        } else {
+          statusEl.textContent = "Сохранено: " + json.label;
+          await loadNext();
+        }
+      }
+
+      document
+        .getElementById("yesBtn")
+        .addEventListener("click", () => label(true));
+      document
+        .getElementById("noBtn")
+        .addEventListener("click", () => label(false));
+
+      loadNext();
+    </script>
+  </body>
+</html>

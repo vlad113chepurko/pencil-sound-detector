@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Проверка: есть ли карандаш?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="/styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>Этап 3: Проверка изображения</h2>
+      <form id="clsForm">
+        <input type="file" id="image" name="image" accept="image/*" required />
+        <button type="submit">Проверить</button>
+      </form>
+      <div id="previewWrap" class="viewer" style="display: none">
+        <img id="preview" alt="preview" />
+      </div>
+      <pre id="result"></pre>
+      <p><a href="/">На главную</a></p>
+    </div>
+    <script>
+      const form = document.getElementById("clsForm");
+      const result = document.getElementById("result");
+      const previewWrap = document.getElementById("previewWrap");
+      const preview = document.getElementById("preview");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        result.textContent = "Анализ...";
+        const fd = new FormData();
+        const file = document.getElementById("image").files[0];
+        if (!file) return;
+
+        preview.src = URL.createObjectURL(file);
+        previewWrap.style.display = "block";
+
+        fd.append("image", file);
+        try {
+          const res = await fetch("/api/classify", {
+            method: "POST",
+            body: fd,
+          });
+          const json = await res.json();
+          if (!res.ok) {
+            result.textContent = "Ошибка: " + (json.error || res.statusText);
+            return;
+          }
+          const verdict = json.hasPencil ? "Есть карандаш" : "Карандаша нет";
+          result.textContent = verdict + "\n\n" + JSON.stringify(json, null, 2);
+        } catch (e) {
+          result.textContent = "Ошибка: " + e.message;
+        }
+      });
+    </script>
+  </body>
+</html>
